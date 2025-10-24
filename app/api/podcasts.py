@@ -922,6 +922,88 @@ async def get_episode(
     return episode_dict
 
 
+@router.get("/{podcast_id}/episodes/{episode_id}/stream")
+async def stream_episode_audio(
+    podcast_id: UUID,
+    episode_id: UUID,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Stream episode audio with Range request support for seeking.
+    Proxies remote audio URLs to serve over HTTPS and enable seeking.
+    """
+    import httpx
+    from fastapi.responses import StreamingResponse
+
+    # Verify ownership
+    await verify_podcast_ownership(podcast_id, current_user, db)
+
+    # Get episode
+    result = await db.execute(
+        select(Episode).where(Episode.id == episode_id, Episode.podcast_id == podcast_id)
+    )
+    episode = result.scalar_one_or_none()
+
+    if not episode:
+        raise HTTPException(status_code=404, detail="Episode not found")
+
+    if not episode.audio_url:
+        raise HTTPException(status_code=404, detail="Episode has no audio URL")
+
+    # Get Range header from client request
+    range_header = request.headers.get("range")
+
+    # Prepare headers for upstream request
+    upstream_headers = {}
+    if range_header:
+        upstream_headers["Range"] = range_header
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            # Make request to remote audio URL
+            upstream_response = await client.get(
+                episode.audio_url,
+                headers=upstream_headers,
+            )
+
+            # Get content type
+            content_type = upstream_response.headers.get("content-type", "audio/mpeg")
+
+            # Build response headers
+            response_headers = {
+                "Accept-Ranges": "bytes",
+                "Content-Type": content_type,
+            }
+
+            # If upstream supports range requests, forward the range response
+            if "content-range" in upstream_response.headers:
+                response_headers["Content-Range"] = upstream_response.headers["content-range"]
+                response_headers["Content-Length"] = upstream_response.headers.get("content-length", "0")
+                status_code = 206  # Partial Content
+            else:
+                # Full content
+                response_headers["Content-Length"] = upstream_response.headers.get("content-length", "0")
+                status_code = 200
+
+            # Stream the audio content
+            async def audio_stream():
+                async for chunk in upstream_response.aiter_bytes(chunk_size=8192):
+                    yield chunk
+
+            return StreamingResponse(
+                audio_stream(),
+                status_code=status_code,
+                headers=response_headers,
+                media_type=content_type,
+            )
+
+    except httpx.RequestError as e:
+        logger.error("audio_stream_error", episode_id=str(episode_id), error=str(e))
+        raise HTTPException(status_code=502, detail="Failed to stream audio from remote server")
+
+
 @router.post("/{podcast_id}/episodes/{episode_id}/download")
 async def download_episode_audio(
     podcast_id: UUID,

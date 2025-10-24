@@ -753,7 +753,11 @@ export default function EpisodeDetailPage() {
             </div>
             <audio ref={mainAudioRef} controls className="w-full">
               <source
-                src={episode.local_audio_path ? `/api/proxy/${episode.local_audio_path}` : episode.audio_url}
+                src={
+                  episode.local_audio_path
+                    ? `/api/proxy/${episode.local_audio_path}`
+                    : `/api/proxy/api/podcasts/${episode.podcast_id}/episodes/${episode.id}/stream`
+                }
                 type="audio/mpeg"
               />
               Your browser does not support the audio element.
