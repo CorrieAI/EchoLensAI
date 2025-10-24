@@ -1,0 +1,13 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Expose port
+EXPOSE 3000
+
+# Start dev server (will use volume-mounted code)
+CMD ["npm", "run", "dev"]

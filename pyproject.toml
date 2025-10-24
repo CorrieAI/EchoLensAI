@@ -1,0 +1,134 @@
+[project]
+name = "echolens"
+version = "1.0.0"
+description = "EchoLens - Bring Podcasts Into Focus. Podcast analysis with transcription, term extraction, and AI-powered insights."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "sqlalchemy>=2.0.0",
+    "asyncpg>=0.29.0",
+    "psycopg2-binary>=2.9.0",
+    "pgvector>=0.3.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "feedparser>=6.0.0",
+    "httpx>=0.27.0",
+    "openai>=1.0.0",
+    "python-multipart>=0.0.9",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0.0",
+    "greenlet>=3.0.0",
+    "celery>=5.4.0",
+    "redis>=5.0.0",
+    "pydub>=0.25.0",
+    "markdown>=3.9",
+    "html2text>=2025.4.15",
+    "python-magic>=0.4.27",
+    "Pillow>=10.0.0",
+    "argon2-cffi>=23.1.0",
+    "email-validator>=2.0.0",
+    "structlog>=25.4.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.6.0",
+]
+
+# Ruff configuration - https://docs.astral.sh/ruff/
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+# Directories to exclude from linting/formatting
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "*.egg-info",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+    "node_modules",
+]
+
+[tool.ruff.lint]
+# Enable specific rule sets
+# See: https://docs.astral.sh/ruff/rules/
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes (unused imports, undefined names, etc)
+    "I",      # isort (import sorting)
+    "N",      # pep8-naming
+    "UP",     # pyupgrade (modernize Python syntax)
+    "B",      # flake8-bugbear (common bugs and design problems)
+    "C4",     # flake8-comprehensions (better list/dict comprehensions)
+    "ISC",    # flake8-implicit-str-concat
+    "PIE",    # flake8-pie (misc. lints)
+    "T20",    # flake8-print (detect print statements)
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return (return statement issues)
+    "SIM",    # flake8-simplify (simplification suggestions)
+    "TID",    # flake8-tidy-imports
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
+    "ERA",    # eradicate (commented-out code)
+    "PL",     # Pylint
+    "PERF",   # Perflint (performance anti-patterns)
+    "RUF",    # Ruff-specific rules
+]
+
+# Rules to ignore/disable
+ignore = [
+    "E501",    # Line too long (handled by formatter)
+    "PLR0913", # Too many arguments to function call
+    "PLR2004", # Magic value used in comparison
+    "ISC001",  # Conflicts with formatter
+    "B008",    # Function call in default argument (FastAPI Depends pattern)
+    "PLC0415", # Import outside top-level (FastAPI lazy imports)
+    "T201",    # Print statements (used for debugging/logging)
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore certain rules in test files
+"**/tests/**/*.py" = [
+    "ARG",     # Unused function args in tests are common (fixtures)
+    "PLR2004", # Magic values are OK in tests
+]
+# Ignore import rules in __init__.py files
+"**/__init__.py" = [
+    "F401",    # Unused imports (re-exports)
+]
+
+[tool.ruff.format]
+# Use Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+# Configure import sorting
+known-first-party = ["app"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
