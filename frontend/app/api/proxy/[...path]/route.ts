@@ -95,6 +95,8 @@ async function proxyRequest(
       'accept-language',
       'user-agent',
       'cookie', // Forward cookies for authentication
+      'range', // Forward Range header for audio/video seeking
+      'if-range', // Forward If-Range header for conditional range requests
     ]
 
     headersToForward.forEach((header) => {
